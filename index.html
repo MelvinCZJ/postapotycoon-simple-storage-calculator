@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Post Apo Tycoon Storage Calculator</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    label { display: block; font-size: 14px; margin-bottom: 6px; }
+    input { padding: 10px; font-size: 16px; width: 140px; }
+    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
+    pre { background: #f6f6f6; padding: 14px; overflow: auto; }
+    .card { background: #fafafa; border: 1px solid #e6e6e6; padding: 14px; border-radius: 10px; margin-top: 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .muted { color: #555; }
+  </style>
+</head>
+<body>
+  <h1>Post Apo Tycoon Storage Calculator</h1>
+  <p class="muted">
+    Inner rectangle is <b>Containers (O)</b>, surrounded by a 1-tile border of <b>Cranes (X)</b>.
+  </p>
+
+  <div class="row">
+    <div>
+      <label for="x">x (width)</label>
+      <input id="x" type="number" min="1" value="4" />
+    </div>
+    <div>
+      <label for="y">y (height)</label>
+      <input id="y" type="number" min="1" value="3" />
+    </div>
+    <button id="calc">Calculate</button>
+  </div>
+
+  <div class="card">
+    <h2>Layout</h2>
+    <pre id="layout"></pre>
+  </div>
+
+  <div class="card">
+    <h2>Results</h2>
+    <div id="results"></div>
+  </div>
+
+<script>
+  const CONTAINER = { stone: 7500, steel: 5000, microchip: 15000, wood: 0, power: 0, pollution: 0 };
+  const CRANE     = { stone:11000, steel: 7700, microchip: 22000, wood: 8800, power:12, pollution:12 };
+
+  function fmt(n){ return new Intl.NumberFormat().format(n); }
+
+  function drawLayout(x, y){
+    const w = x + 2, h = y + 2;
+    let lines = [];
+    for (let r=0; r<h; r++){
+      let line = "";
+      for (let c=0; c<w; c++){
+        const border = (r===0 || r===h-1 || c===0 || c===w-1);
+        line += border ? "X" : "O";
+      }
+      lines.push(line);
+    }
+    return lines.join("\n");
+  }
+
+  function compute(x, y){
+    const containers = x * y;
+    const cranes = (x + 2) * (y + 2) - containers;
+    const totalTiles = containers + cranes;
+
+    const totals = {};
+    for (const k of ["stone","steel","microchip","wood"]){
+      totals[k] = containers * CONTAINER[k] + cranes * CRANE[k];
+    }
+    totals.power = containers * CONTAINER.power + cranes * CRANE.power;
+    totals.pollution = containers * CONTAINER.pollution + cranes * CRANE.pollution;
+
+    const perTile = {};
+    for (const k of ["stone","steel","microchip","wood","power","pollution"]){
+      perTile[k] = totals[k] / totalTiles;
+    }
+
+    return { containers, cranes, totalTiles, totals, perTile };
+  }
+
+  function render(){
+    const x = Math.max(1, parseInt(document.getElementById("x").value || "1", 10));
+    const y = Math.max(1, parseInt(document.getElementById("y").value || "1", 10));
+
+    document.getElementById("layout").textContent = drawLayout(x, y);
+
+    const r = compute(x, y);
+
+    const html = `
+      <p><b>Containers (O):</b> ${fmt(r.containers)}<br/>
+         <b>Cranes (X):</b> ${fmt(r.cranes)}<br/>
+         <b>Total tiles:</b> ${fmt(r.totalTiles)}</p>
+
+      <div class="grid">
+        <div>
+          <h3>Total Storage</h3>
+          Stone: ${fmt(r.totals.stone)}<br/>
+          Steel: ${fmt(r.totals.steel)}<br/>
+          Microchip: ${fmt(r.totals.microchip)}<br/>
+          Wood: ${fmt(r.totals.wood)}<br/>
+          <br/>
+          Power: ${fmt(r.totals.power)}<br/>
+          Pollution: ${fmt(r.totals.pollution)}
+        </div>
+        <div>
+          <h3>Per Tile (density)</h3>
+          Stone/tile: ${fmt(r.perTile.stone.toFixed(2))}<br/>
+          Steel/tile: ${fmt(r.perTile.steel.toFixed(2))}<br/>
+          Microchip/tile: ${fmt(r.perTile.microchip.toFixed(2))}<br/>
+          Wood/tile: ${fmt(r.perTile.wood.toFixed(2))}<br/>
+          <br/>
+          Power/tile: ${fmt(r.perTile.power.toFixed(2))}<br/>
+          Pollution/tile: ${fmt(r.perTile.pollution.toFixed(2))}
+        </div>
+      </div>
+
+      <p class="muted">
+        “Per tile” is shown per resource so wood being 0 in containers isn’t hidden.
+      </p>
+    `;
+    document.getElementById("results").innerHTML = html;
+
+    document.getElementById("x").value = x;
+    document.getElementById("y").value = y;
+  }
+
+  document.getElementById("calc").addEventListener("click", render);
+  render();
+</script>
+</body>
+</html>
