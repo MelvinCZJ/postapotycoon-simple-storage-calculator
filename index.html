@@ -5,44 +5,162 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Post Apo Tycoon Storage Calculator</title>
   <style>
-    body { font-family: system-ui, Arial, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 16px; }
+    body { font-family: system-ui, Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 16px; }
+    .muted { color: #555; }
+    .ok { color: #116611; }
+    .warn { color: #8a3a00; }
+
+    .tabs { display: flex; gap: 10px; margin: 14px 0 18px; }
+    .tabbtn {
+      padding: 10px 12px; font-size: 15px; cursor: pointer;
+      border: 1px solid #e1e1e1; border-radius: 10px; background: #fafafa;
+    }
+    .tabbtn.active { border-color: #c9c9c9; background: #f3f3f3; font-weight: 600; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+
     .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
     label { display: block; font-size: 14px; margin-bottom: 6px; }
-    input { padding: 10px; font-size: 16px; width: 140px; }
-    button { padding: 10px 14px; font-size: 16px; cursor: pointer; }
-    pre { background: #f6f6f6; padding: 14px; overflow: auto; }
-    .card { background: #fafafa; border: 1px solid #e6e6e6; padding: 14px; border-radius: 10px; margin-top: 16px; }
+    input, select {
+      padding: 10px; font-size: 16px; border: 1px solid #e1e1e1; border-radius: 10px;
+    }
+    input[type="number"] { width: 190px; }
+    input[type="range"] { width: 360px; }
+    select { min-width: 280px; }
+    button {
+      padding: 10px 14px; font-size: 16px; cursor: pointer;
+      border: 1px solid #e1e1e1; border-radius: 10px; background: #f7f7f7;
+    }
+    button:hover { background: #f0f0f0; }
+
+    .card { background: #fafafa; border: 1px solid #e6e6e6; padding: 14px; border-radius: 12px; margin-top: 16px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .muted { color: #555; }
+
+    pre {
+      background: #f6f6f6; padding: 14px; overflow: auto; border-radius: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      line-height: 1.05;
+      font-size: 14px;
+      letter-spacing: 0.2px;
+      margin: 0;
+      white-space: pre;
+    }
+    .hint { font-size: 13px; color: #666; margin-top: 8px; }
+    .small { font-size: 13px; }
   </style>
 </head>
 <body>
-  <h1>Post Apo Tycoon Storage Calculator</h1>
+  <h1>Post Apo Tycoon – Simple Storage Calculator</h1>
   <p class="muted">
-    Inner rectangle is <b>Containers (O)</b>, surrounded by a 1-tile border of <b>Cranes (X)</b>.
+    Plan storage blocks using Containers (O) and Cranes (X). Mode applies to both tabs.
   </p>
 
+  <!-- Global mode selector -->
   <div class="row">
     <div>
-      <label for="x">x (width)</label>
-      <input id="x" type="number" min="1" value="4" />
+      <label for="mode">Mode</label>
+      <select id="mode">
+        <option value="border">Crane border + container core</option>
+        <option value="allCranes">All cranes</option>
+        <option value="allContainers">All containers</option>
+      </select>
     </div>
-    <div>
-      <label for="y">y (height)</label>
-      <input id="y" type="number" min="1" value="3" />
-    </div>
-    <button id="calc">Calculate</button>
   </div>
 
-  <div class="card">
-    <h2>Layout</h2>
-    <pre id="layout"></pre>
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="calc">Calculator</button>
+    <button class="tabbtn" data-tab="opt">Optimizer</button>
   </div>
 
-  <div class="card">
-    <h2>Results</h2>
-    <div id="results"></div>
-  </div>
+  <!-- Calculator -->
+  <section id="calc" class="panel active">
+    <div class="row">
+      <div>
+        <label for="x">x (inner width)</label>
+        <input id="x" type="number" min="1" value="4" />
+      </div>
+      <div>
+        <label for="y">y (inner height)</label>
+        <input id="y" type="number" min="1" value="3" />
+      </div>
+      <button id="calcBtn">Calculate</button>
+    </div>
+
+    <div class="card">
+      <h2>Layout</h2>
+      <pre id="layout"></pre>
+      <div class="hint">
+        Labels are shown above the grid so they never squish the first row.
+        X = crane, O = container.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Results</h2>
+      <div id="results"></div>
+    </div>
+  </section>
+
+  <!-- Optimizer -->
+  <section id="opt" class="panel">
+    <div class="row">
+      <div>
+        <label for="res">Resource</label>
+        <select id="res">
+          <option value="microchip">Microchip</option>
+          <option value="steel">Steel</option>
+          <option value="stone">Stone</option>
+          <option value="wood">Wood</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="target">Target amount</label>
+        <!-- patched: text input so we can display commas -->
+        <input id="target" type="text" inputmode="numeric" value="500000" />
+      </div>
+
+      <button id="findBestBtn">Find closest square</button>
+    </div>
+
+    <div class="card">
+      <h2>Closest square found</h2>
+      <div id="bestOut" class="small muted">Pick resource + target, then click “Find closest square”.</div>
+    </div>
+
+    <div class="card">
+      <h2>Edit the found layout</h2>
+      <p class="muted small" style="margin-top:0;">
+        Slide <b>X</b>; the tool auto-picks the smallest <b>Y</b> that still meets the target (in the selected mode).
+      </p>
+
+      <div class="row">
+        <div>
+          <label for="xSlider">X slider</label>
+          <input id="xSlider" type="range" min="1" max="200" value="10" />
+          <div class="small muted">X = <span id="xSliderVal">10</span></div>
+        </div>
+
+        <div>
+          <label for="optX">X (manual)</label>
+          <input id="optX" type="number" min="1" value="10" />
+        </div>
+
+        <div>
+          <label for="optY">Y (manual)</label>
+          <input id="optY" type="number" min="1" value="10" />
+        </div>
+
+        <button id="applyXYBtn">Apply X/Y</button>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 style="margin-top:0;">Edited layout result</h3>
+        <div id="editStatus" class="small muted">No layout yet.</div>
+        <pre id="editLayout" style="margin-top:10px;"></pre>
+      </div>
+    </div>
+  </section>
 
 <script>
   const CONTAINER = { stone: 7500, steel: 5000, microchip: 15000, wood: 0, power: 0, pollution: 0 };
@@ -50,88 +168,304 @@
 
   function fmt(n){ return new Intl.NumberFormat().format(n); }
 
-  function drawLayout(x, y){
-    const w = x + 2, h = y + 2;
+  // --- Comma number input helpers (Optimizer target) ---
+  function parseUserNumber(s){
+    const cleaned = String(s).replace(/,/g, "").trim();
+    const n = parseInt(cleaned || "0", 10);
+    return Number.isFinite(n) ? n : 0;
+  }
+  function formatWithCommas(n){
+    return new Intl.NumberFormat().format(n);
+  }
+  function wireCommaInput(inputEl){
+    inputEl.addEventListener("focus", () => {
+      inputEl.value = String(parseUserNumber(inputEl.value) || "");
+    });
+    inputEl.addEventListener("blur", () => {
+      const n = parseUserNumber(inputEl.value);
+      inputEl.value = n > 0 ? formatWithCommas(n) : "";
+    });
+    inputEl.addEventListener("input", () => {
+      inputEl.value = inputEl.value.replace(/[^\d,]/g, "");
+    });
+  }
+
+  function getMode(){
+    return document.getElementById("mode").value;
+  }
+
+  // x,y are the "inner" dimensions.
+  // Outer footprint is always (x+2)*(y+2) across all modes; mode changes what fills those tiles.
+  function computeCounts(x, y, mode){
+    const outerW = x + 2, outerH = y + 2;
+    const outerTiles = outerW * outerH;
+
+    if (mode === "allCranes") return { containers: 0, cranes: outerTiles, outerW, outerH };
+    if (mode === "allContainers") return { containers: outerTiles, cranes: 0, outerW, outerH };
+
+    // border mode
+    const containers = x * y;
+    const cranes = outerTiles - containers;
+    return { containers, cranes, outerW, outerH };
+  }
+
+  function computeTotals(containers, cranes){
+    const totals = {};
+    for (const k of ["stone","steel","microchip","wood"]){
+      totals[k] = containers * CONTAINER[k] + cranes * CRANE[k];
+    }
+    totals.power = cranes * CRANE.power;
+    totals.pollution = cranes * CRANE.pollution;
+    return totals;
+  }
+
+  function compute(x, y, mode){
+    const c = computeCounts(x, y, mode);
+    const totalTiles = c.containers + c.cranes;
+    const totals = computeTotals(c.containers, c.cranes);
+
+    const perTile = {};
+    for (const k of ["stone","steel","microchip","wood","power","pollution"]){
+      perTile[k] = totals[k] / totalTiles;
+    }
+    return { x, y, mode, ...c, totalTiles, totals, perTile };
+  }
+
+  // Labels on their own lines, then blank line, then grid
+  function drawLayout(x, y, mode){
+    const { outerW:w, outerH:h } = computeCounts(x, y, mode);
+
     let lines = [];
+    lines.push(`x = ${x} →`);
+    lines.push(`y = ${y} ↓`);
+    lines.push("");
+
     for (let r=0; r<h; r++){
       let line = "";
-      for (let c=0; c<w; c++){
-        const border = (r===0 || r===h-1 || c===0 || c===w-1);
-        line += border ? "X" : "O";
+      for (let col=0; col<w; col++){
+        let ch = "O";
+        if (mode === "allCranes") ch = "X";
+        else if (mode === "allContainers") ch = "O";
+        else {
+          const border = (r===0 || r===h-1 || col===0 || col===w-1);
+          ch = border ? "X" : "O";
+        }
+        line += ch;
       }
       lines.push(line);
     }
     return lines.join("\n");
   }
 
-  function compute(x, y){
-    const containers = x * y;
-    const cranes = (x + 2) * (y + 2) - containers;
-    const totalTiles = containers + cranes;
-
-    const totals = {};
-    for (const k of ["stone","steel","microchip","wood"]){
-      totals[k] = containers * CONTAINER[k] + cranes * CRANE[k];
-    }
-    totals.power = containers * CONTAINER.power + cranes * CRANE.power;
-    totals.pollution = containers * CONTAINER.pollution + cranes * CRANE.pollution;
-
-    const perTile = {};
-    for (const k of ["stone","steel","microchip","wood","power","pollution"]){
-      perTile[k] = totals[k] / totalTiles;
-    }
-
-    return { containers, cranes, totalTiles, totals, perTile };
-  }
-
-  function render(){
+  // --- Calculator ---
+  function renderCalc(){
     const x = Math.max(1, parseInt(document.getElementById("x").value || "1", 10));
     const y = Math.max(1, parseInt(document.getElementById("y").value || "1", 10));
+    const mode = getMode();
 
-    document.getElementById("layout").textContent = drawLayout(x, y);
+    document.getElementById("layout").textContent = drawLayout(x, y, mode);
 
-    const r = compute(x, y);
+    const r = compute(x, y, mode);
+    const t = r.totals, p = r.perTile;
 
-    const html = `
-      <p><b>Containers (O):</b> ${fmt(r.containers)}<br/>
-         <b>Cranes (X):</b> ${fmt(r.cranes)}<br/>
-         <b>Total tiles:</b> ${fmt(r.totalTiles)}</p>
+    const modeLabel =
+      mode === "border" ? "Crane border + container core" :
+      mode === "allCranes" ? "All cranes" : "All containers";
+
+    document.getElementById("results").innerHTML = `
+      <p>
+        <b>Mode:</b> ${modeLabel}<br/>
+        <b>Containers (O):</b> ${fmt(r.containers)}<br/>
+        <b>Cranes (X):</b> ${fmt(r.cranes)}<br/>
+        <b>Total tiles:</b> ${fmt(r.totalTiles)}
+      </p>
 
       <div class="grid">
         <div>
           <h3>Total Storage</h3>
-          Stone: ${fmt(r.totals.stone)}<br/>
-          Steel: ${fmt(r.totals.steel)}<br/>
-          Microchip: ${fmt(r.totals.microchip)}<br/>
-          Wood: ${fmt(r.totals.wood)}<br/>
-          <br/>
-          Power: ${fmt(r.totals.power)}<br/>
-          Pollution: ${fmt(r.totals.pollution)}
+          Stone: ${fmt(t.stone)}<br/>
+          Steel: ${fmt(t.steel)}<br/>
+          Microchip: ${fmt(t.microchip)}<br/>
+          Wood: ${fmt(t.wood)}<br/><br/>
+          Power: ${fmt(t.power)}<br/>
+          Pollution: ${fmt(t.pollution)}
         </div>
         <div>
           <h3>Per Tile (density)</h3>
-          Stone/tile: ${fmt(r.perTile.stone.toFixed(2))}<br/>
-          Steel/tile: ${fmt(r.perTile.steel.toFixed(2))}<br/>
-          Microchip/tile: ${fmt(r.perTile.microchip.toFixed(2))}<br/>
-          Wood/tile: ${fmt(r.perTile.wood.toFixed(2))}<br/>
-          <br/>
-          Power/tile: ${fmt(r.perTile.power.toFixed(2))}<br/>
-          Pollution/tile: ${fmt(r.perTile.pollution.toFixed(2))}
+          Stone/tile: ${fmt(p.stone.toFixed(2))}<br/>
+          Steel/tile: ${fmt(p.steel.toFixed(2))}<br/>
+          Microchip/tile: ${fmt(p.microchip.toFixed(2))}<br/>
+          Wood/tile: ${fmt(p.wood.toFixed(2))}<br/><br/>
+          Power/tile: ${fmt(p.power.toFixed(2))}<br/>
+          Pollution/tile: ${fmt(p.pollution.toFixed(2))}
         </div>
       </div>
-
-      <p class="muted">
-        “Per tile” is shown per resource so wood being 0 in containers isn’t hidden.
-      </p>
     `;
-    document.getElementById("results").innerHTML = html;
 
     document.getElementById("x").value = x;
     document.getElementById("y").value = y;
   }
 
-  document.getElementById("calc").addEventListener("click", render);
-  render();
+  // --- Optimizer: closest square using selected mode ---
+  function closestSquareForTarget(resource, target, mode){
+    const HARD_CAP = 300;
+    for (let n = 1; n <= HARD_CAP; n++){
+      const r = compute(n, n, mode);
+      if (r.totals[resource] >= target) return r;
+    }
+    return null;
+  }
+
+  function solveMinY(resource, target, x, mode){
+    const HARD_CAP = 300;
+    for (let y = 1; y <= HARD_CAP; y++){
+      const r = compute(x, y, mode);
+      if (r.totals[resource] >= target) return r;
+    }
+    return null;
+  }
+
+  function getTarget(){
+    return Math.max(1, parseUserNumber(document.getElementById("target").value));
+  }
+
+  function renderBest(){
+    const resource = document.getElementById("res").value;
+    const target = getTarget();
+    const mode = getMode();
+
+    const r = closestSquareForTarget(resource, target, mode);
+    if (!r){
+      document.getElementById("bestOut").innerHTML =
+        `No square solution found within the internal limit. Try lowering the target amount.`;
+      return;
+    }
+
+    const amount = r.totals[resource];
+    const density = amount / r.totalTiles;
+
+    const modeLabel =
+      mode === "border" ? "Crane border + container core" :
+      mode === "allCranes" ? "All cranes" : "All containers";
+
+    document.getElementById("bestOut").innerHTML = `
+      <p>
+        <b>Mode:</b> ${modeLabel}<br/>
+        <b>Resource:</b> ${resource}<br/>
+        <b>Target:</b> ${fmt(target)}<br/>
+        <b>Closest square:</b> ${r.x} × ${r.y}<br/>
+        <b>${resource} total:</b> ${fmt(amount)} (exceeds by ${fmt(amount - target)})<br/>
+        <b>Total tiles:</b> ${fmt(r.totalTiles)}<br/>
+        <b>${resource}/tile:</b> ${density.toFixed(2)}<br/>
+        <b>Power:</b> ${fmt(r.totals.power)} | <b>Pollution:</b> ${fmt(r.totals.pollution)}
+      </p>
+      <pre>${drawLayout(r.x, r.y, mode)}</pre>
+    `;
+
+    // Seed editor
+    const slider = document.getElementById("xSlider");
+    slider.value = Math.min(parseInt(slider.max, 10), r.x);
+    document.getElementById("xSliderVal").textContent = slider.value;
+
+    document.getElementById("optX").value = r.x;
+    document.getElementById("optY").value = r.y;
+    renderEdited(r.x, r.y);
+  }
+
+  function renderEdited(x, y){
+    const resource = document.getElementById("res").value;
+    const target = getTarget();
+    const mode = getMode();
+
+    const r = compute(x, y, mode);
+    const amount = r.totals[resource];
+    const meets = amount >= target;
+
+    const statusClass = meets ? "ok" : "warn";
+    const statusText = meets ? "Meets target ✅" : "Below target ⚠️";
+
+    document.getElementById("editStatus").innerHTML = `
+      <span class="${statusClass}"><b>${statusText}</b></span><br/>
+      <b>x,y:</b> ${x} × ${y}<br/>
+      <b>Total tiles:</b> ${fmt(r.totalTiles)}<br/>
+      <b>${resource} total:</b> ${fmt(amount)} (target ${fmt(target)})<br/>
+      <b>${resource}/tile:</b> ${(amount / r.totalTiles).toFixed(2)}<br/>
+      <b>Power:</b> ${fmt(r.totals.power)} | <b>Pollution:</b> ${fmt(r.totals.pollution)}
+    `;
+
+    document.getElementById("editLayout").textContent = drawLayout(x, y, mode);
+  }
+
+  // --- Tabs ---
+  function setTab(tabId){
+    document.querySelectorAll(".tabbtn").forEach(b => {
+      b.classList.toggle("active", b.dataset.tab === tabId);
+    });
+    document.querySelectorAll(".panel").forEach(p => {
+      p.classList.toggle("active", p.id === tabId);
+    });
+  }
+  document.querySelectorAll(".tabbtn").forEach(btn => {
+    btn.addEventListener("click", () => setTab(btn.dataset.tab));
+  });
+
+  // --- Wiring ---
+  document.getElementById("calcBtn").addEventListener("click", renderCalc);
+  document.getElementById("findBestBtn").addEventListener("click", renderBest);
+
+  document.getElementById("mode").addEventListener("change", () => {
+    renderCalc();
+
+    // If optimizer has an edit layout already, refresh it in the new mode too
+    const x = parseInt(document.getElementById("optX").value || "0", 10);
+    const y = parseInt(document.getElementById("optY").value || "0", 10);
+    if (x > 0 && y > 0){
+      renderEdited(x, y);
+    }
+  });
+
+  document.getElementById("xSlider").addEventListener("input", (e) => {
+    const x = Math.max(1, parseInt(e.target.value || "1", 10));
+    document.getElementById("xSliderVal").textContent = x;
+    document.getElementById("optX").value = x;
+
+    const resource = document.getElementById("res").value;
+    const target = getTarget();
+    const mode = getMode();
+
+    const solved = solveMinY(resource, target, x, mode);
+    if (!solved){
+      const y = Math.max(1, parseInt(document.getElementById("optY").value || "1", 10));
+      renderEdited(x, y);
+      return;
+    }
+
+    document.getElementById("optY").value = solved.y;
+    renderEdited(solved.x, solved.y);
+  });
+
+  document.getElementById("applyXYBtn").addEventListener("click", () => {
+    const x = Math.max(1, parseInt(document.getElementById("optX").value || "1", 10));
+    const y = Math.max(1, parseInt(document.getElementById("optY").value || "1", 10));
+
+    const slider = document.getElementById("xSlider");
+    slider.value = Math.min(parseInt(slider.max, 10), x);
+    document.getElementById("xSliderVal").textContent = slider.value;
+
+    renderEdited(x, y);
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    const calcActive = document.getElementById("calc").classList.contains("active");
+    if (calcActive) renderCalc();
+    else renderBest();
+  });
+
+  // Init
+  wireCommaInput(document.getElementById("target"));
+  document.getElementById("target").dispatchEvent(new Event("blur")); // format initial value with commas
+  renderCalc();
 </script>
 </body>
 </html>
